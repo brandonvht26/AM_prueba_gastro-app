@@ -67,7 +67,10 @@ export function useDishes() {
     dishes: query.data,
     isLoading: query.isLoading,
     error: query.error,
-    ...mutation,
+    refetch: query.refetch,
+    isRefetching: query.isRefetching,
+    addDish: mutation.mutateAsync,
+    isPending: mutation.isPending,
     deleteDish: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
   };

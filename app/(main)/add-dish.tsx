@@ -8,7 +8,7 @@ import { takePhoto, pickImage } from '@/src/hooks/useMedia';
 
 export default function AddDish() {
   const router = useRouter();
-  const { mutateAsync: addDish, isPending } = useDishes();
+  const { addDish, isPending } = useDishes();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
 
