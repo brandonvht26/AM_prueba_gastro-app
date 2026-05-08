@@ -1,4 +1,5 @@
 import { View, Text, TextInput, Pressable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { useForm } from '@tanstack/react-form';
 import { useAuth } from '@/src/hooks/useAuth';
@@ -20,7 +21,7 @@ export default function LoginScreen() {
   });
 
   return (
-    <View className="flex-1 justify-center px-6 bg-dominos-white">
+    <SafeAreaView className="flex-1 justify-center px-6 bg-dominos-white">
       <Text className="text-3xl font-bold text-dominos-red text-center mb-8">
         Iniciar Sesión
       </Text>
@@ -98,6 +99,6 @@ export default function LoginScreen() {
       <Link href="/(auth)/register" className="text-dominos-blue text-sm text-center">
         ¿No tienes cuenta? Regístrate
       </Link>
-    </View>
+    </SafeAreaView>
   );
 }

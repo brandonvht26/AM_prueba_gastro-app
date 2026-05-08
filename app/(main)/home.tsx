@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Pressable, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, withSpring, useAnimatedStyle } from 'react-native-reanimated';
 import { useAuth } from '@/src/hooks/useAuth';
@@ -37,8 +38,8 @@ export default function Home() {
   );
 
   return (
-    <View className="flex-1 bg-dominos-white relative">
-      <View className="bg-dominos-blue pt-12 pb-4 px-6 flex-row items-center justify-between">
+    <SafeAreaView className="flex-1 bg-dominos-white relative">
+      <View className="bg-dominos-blue pb-4 px-6 flex-row items-center justify-between">
         <Text className="text-dominos-white text-2xl font-bold">
           Mis Platos
         </Text>
@@ -94,6 +95,6 @@ export default function Home() {
           </Text>
         </Pressable>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 }
