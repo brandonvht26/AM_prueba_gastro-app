@@ -12,20 +12,15 @@ export default function Home() {
   const router = useRouter();
   const { signOut } = useAuth();
   const scale = useSharedValue(1);
-  const { dishes, isLoading, refetch, isRefetching, deleteDish } = useDishes();
+  const { dishes, isLoading, refetch, deleteDish } = useDishes();
   const [refreshing, setRefreshing] = useState(false);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.9);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1);
-  };
+  const handlePressIn = () => { scale.value = withSpring(0.9); };
+  const handlePressOut = () => { scale.value = withSpring(1); };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -38,63 +33,78 @@ export default function Home() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-dominos-white relative">
-      <View className="bg-dominos-blue pb-4 px-6 flex-row items-center justify-between">
-        <Text className="text-dominos-white text-2xl font-bold">
-          Mis Platos
+    // SafeAreaView solo maneja el área del notch (top), con el color del header
+    <SafeAreaView edges={['top']} className="flex-1 bg-dominos-blue">
+
+      {/* Header */}
+      <View className="bg-dominos-blue px-6 pt-2 pb-4 flex-row items-center justify-between">
+        <Text className="text-white text-2xl font-bold">
+          Mis Platos 🍕
         </Text>
-        <Pressable onPress={signOut}>
-          <Text className="text-dominos-white text-sm font-semibold">
+        <Pressable
+          onPress={signOut}
+          className="bg-dominos-red rounded-lg px-3 py-1.5"
+        >
+          <Text className="text-white text-sm font-semibold">
             Cerrar Sesión
           </Text>
         </Pressable>
       </View>
 
-      {isLoading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#E31837" />
-        </View>
-      ) : !dishes || dishes.length === 0 ? (
-        <View className="flex-1 justify-center items-center px-8">
-          <Text className="text-gray-500 text-lg text-center">
-            Aún no has registrado ningún plato.
-          </Text>
-          <Text className="text-gray-400 text-sm text-center mt-2">
-            Presiona el botón + para agregar tu primer plato.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={dishes}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerClassName="p-4 pb-24"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#E31837"
-              colors={['#E31837']}
-            />
-          }
-        />
-      )}
+      {/* Contenido — fondo blanco, posición relativa para el FAB */}
+      <View className="flex-1 bg-dominos-white">
+        {isLoading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#E31837" />
+          </View>
+        ) : !dishes || dishes.length === 0 ? (
+          <View className="flex-1 justify-center items-center px-8">
+            <Text className="text-6xl mb-4">🍽️</Text>
+            <Text className="text-gray-600 text-lg font-semibold text-center">
+              Sin platos registrados
+            </Text>
+            <Text className="text-gray-400 text-sm text-center mt-2">
+              Presiona el botón + para agregar tu primer plato.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={dishes}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#E31837"
+                colors={['#E31837']}
+              />
+            }
+          />
+        )}
 
-      <Animated.View
-        className="absolute bottom-8 right-8"
-        style={animatedStyle}
-      >
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          onPress={() => router.push('/(main)/add-dish')}
-          className="bg-dominos-red w-16 h-16 rounded-full items-center justify-center shadow-lg"
+        {/* FAB — absolute dentro del View blanco */}
+        <Animated.View
+          style={[
+            animatedStyle,
+            { position: 'absolute', bottom: 32, right: 32 },
+          ]}
         >
-          <Text className="text-dominos-white text-3xl font-bold leading-none">
-            +
-          </Text>
-        </Pressable>
-      </Animated.View>
+          <Pressable
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            onPress={() => router.push('/(main)/add-dish')}
+            className="bg-dominos-red w-16 h-16 rounded-full items-center justify-center"
+            style={{ elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 4 }}
+          >
+            <Text className="text-white text-3xl font-bold leading-none">
+              +
+            </Text>
+          </Pressable>
+        </Animated.View>
+      </View>
+
     </SafeAreaView>
   );
 }
