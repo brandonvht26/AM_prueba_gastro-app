@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Image, Pressable } from 'react-native';
+import { View, Text, Image, Pressable, Alert } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import Animated, { FadeInDown, FadeOutLeft } from 'react-native-reanimated';
 import type { Dish } from '@/src/types';
@@ -12,8 +12,19 @@ interface Props {
 export default function DishCard({ dish, onDelete }: Props) {
   const [removing, setRemoving] = useState(false);
 
-  const handleDelete = async () => {
-    setRemoving(true);
+  const handleDelete = () => {
+    Alert.alert(
+      'Eliminar plato',
+      `¿Estás seguro de que deseas eliminar "${dish.name}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => setRemoving(true),
+        },
+      ]
+    );
   };
 
   if (removing) {
