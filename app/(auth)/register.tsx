@@ -1,4 +1,8 @@
-import { View, Text, TextInput, Pressable, Alert, ImageBackground, ScrollView } from 'react-native';
+import { useState } from 'react';
+import {
+  View, Text, TextInput, Pressable, Alert,
+  ImageBackground, ScrollView, StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useForm } from '@tanstack/react-form';
@@ -7,22 +11,17 @@ import { useAuth } from '@/src/hooks/useAuth';
 export default function RegisterScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const form = useForm({
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
+    defaultValues: { email: '', password: '', confirmPassword: '' },
     onSubmit: async ({ value }) => {
       const { error } = await signUp(value.email, value.password);
       if (error) {
         Alert.alert('Error', error.message);
       } else {
-        Alert.alert(
-          'Cuenta creada',
-          'Revisa tu correo para confirmar tu cuenta.'
-        );
+        Alert.alert('Cuenta creada', 'Revisa tu correo para confirmar tu cuenta.');
       }
     },
   });
@@ -30,165 +29,186 @@ export default function RegisterScreen() {
   return (
     <ImageBackground
       source={require('@/assets/images/wallpaper_register.jpg')}
-      className="flex-1"
-      blurRadius={10}
+      style={styles.bg}
+      blurRadius={6}
     >
-      <View style={{ flex: 1, backgroundColor: 'rgba(0, 55, 120, 0.60)' }}>
-        <SafeAreaView className="flex-1">
-          <ScrollView
-            className="flex-1"
-            contentContainerClassName="px-6 pb-10"
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Logo / Título */}
-            <View className="items-center mt-10 mb-8">
-              <Text className="text-5xl font-bold text-white">
-                🍕
-              </Text>
-              <Text className="text-4xl font-bold text-white mt-2">
-                Gastro Map
-              </Text>
-              <Text className="text-white text-sm mt-1 opacity-80">
-                Crea tu cuenta y empieza a explorar
-              </Text>
-            </View>
+      <View style={styles.overlay} />
 
-            {/* Card del formulario */}
-            <View
-              className="rounded-2xl px-6 pt-8 pb-6"
-              style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
+
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoEmoji}>🍕</Text>
+            <Text style={styles.logoTitle}>Gastro Map</Text>
+            <Text style={styles.logoSubtitle}>Crea tu cuenta y empieza a explorar</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Crear Cuenta</Text>
+
+            <form.Field
+              name="email"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return 'El correo es requerido';
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Correo inválido';
+                  return undefined;
+                },
+              }}
             >
-              <Text className="text-2xl font-bold text-white text-center mb-6">
-                Crear Cuenta
-              </Text>
+              {(field) => (
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                    onBlur={field.handleBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    placeholder="tu@correo.com"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                  />
+                  {field.state.meta.errors?.length ? (
+                    <Text style={styles.errorText}>{field.state.meta.errors.join(', ')}</Text>
+                  ) : null}
+                </View>
+              )}
+            </form.Field>
 
-              <form.Field
-                name="email"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value) return 'El correo es requerido';
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-                      return 'Correo inválido';
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <View className="mb-4">
-                    <Text className="text-sm text-white mb-1 font-medium opacity-90">
-                      Email
-                    </Text>
+            <form.Field
+              name="password"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return 'La contraseña es requerida';
+                  if (value.length < 6) return 'Mínimo 6 caracteres';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Contraseña</Text>
+                  <View style={styles.passwordRow}>
                     <TextInput
-                      className="rounded-xl px-4 py-3 text-base text-white"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
+                      style={styles.passwordInput}
                       value={field.state.value}
                       onChangeText={field.handleChange}
                       onBlur={field.handleBlur}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      placeholder="tu@correo.com"
-                      placeholderTextColor="rgba(255,255,255,0.5)"
-                    />
-                    {field.state.meta.errors ? (
-                      <Text className="text-red-300 text-xs mt-1">
-                        {field.state.meta.errors.join(', ')}
-                      </Text>
-                    ) : null}
-                  </View>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="password"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value) return 'La contraseña es requerida';
-                    if (value.length < 6) return 'Mínimo 6 caracteres';
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <View className="mb-4">
-                    <Text className="text-sm text-white mb-1 font-medium opacity-90">
-                      Contraseña
-                    </Text>
-                    <TextInput
-                      className="rounded-xl px-4 py-3 text-base text-white"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
-                      value={field.state.value}
-                      onChangeText={field.handleChange}
-                      onBlur={field.handleBlur}
-                      secureTextEntry
+                      secureTextEntry={!showPassword}
                       placeholder="••••••"
                       placeholderTextColor="rgba(255,255,255,0.5)"
                     />
-                    {field.state.meta.errors ? (
-                      <Text className="text-red-300 text-xs mt-1">
-                        {field.state.meta.errors.join(', ')}
-                      </Text>
-                    ) : null}
+                    <Pressable onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
+                      <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                    </Pressable>
                   </View>
-                )}
-              </form.Field>
+                  {field.state.meta.errors?.length ? (
+                    <Text style={styles.errorText}>{field.state.meta.errors.join(', ')}</Text>
+                  ) : null}
+                </View>
+              )}
+            </form.Field>
 
-              <form.Field
-                name="confirmPassword"
-                validators={{
-                  onChange: ({ value, fieldApi }) => {
-                    if (!value) return 'Confirma tu contraseña';
-                    const password = fieldApi.form.getFieldValue('password');
-                    if (value !== password) return 'Las contraseñas no coinciden';
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <View className="mb-6">
-                    <Text className="text-sm text-white mb-1 font-medium opacity-90">
-                      Confirmar Contraseña
-                    </Text>
+            <form.Field
+              name="confirmPassword"
+              validators={{
+                onChange: ({ value, fieldApi }) => {
+                  if (!value) return 'Confirma tu contraseña';
+                  const password = fieldApi.form.getFieldValue('password');
+                  if (value !== password) return 'Las contraseñas no coinciden';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <View style={[styles.fieldContainer, { marginBottom: 20 }]}>
+                  <Text style={styles.label}>Confirmar Contraseña</Text>
+                  <View style={styles.passwordRow}>
                     <TextInput
-                      className="rounded-xl px-4 py-3 text-base text-white"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
+                      style={styles.passwordInput}
                       value={field.state.value}
                       onChangeText={field.handleChange}
                       onBlur={field.handleBlur}
-                      secureTextEntry
+                      secureTextEntry={!showConfirm}
                       placeholder="••••••"
                       placeholderTextColor="rgba(255,255,255,0.5)"
                     />
-                    {field.state.meta.errors ? (
-                      <Text className="text-red-300 text-xs mt-1">
-                        {field.state.meta.errors.join(', ')}
-                      </Text>
-                    ) : null}
+                    <Pressable onPress={() => setShowConfirm((v) => !v)} style={styles.eyeBtn}>
+                      <Text style={styles.eyeText}>{showConfirm ? '🙈' : '👁️'}</Text>
+                    </Pressable>
                   </View>
-                )}
-              </form.Field>
+                  {field.state.meta.errors?.length ? (
+                    <Text style={styles.errorText}>{field.state.meta.errors.join(', ')}</Text>
+                  ) : null}
+                </View>
+              )}
+            </form.Field>
 
-              <Pressable
-                className="bg-dominos-red rounded-xl py-4 items-center mb-4"
-                onPress={form.handleSubmit}
-              >
-                <Text className="text-white font-bold text-base">
-                  Registrarse
-                </Text>
-              </Pressable>
+            <Pressable style={styles.button} onPress={form.handleSubmit}>
+              <Text style={styles.buttonText}>Registrarse</Text>
+            </Pressable>
 
-              <Pressable
-                className="items-center"
-                onPress={() => router.push('/(auth)/login')}
-              >
-                <Text className="text-white text-sm opacity-90">
-                  ¿Ya tienes cuenta? Inicia sesión
-                </Text>
-              </Pressable>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </View>
+            <Pressable onPress={() => router.push('/(auth)/login')} style={styles.linkBtn}>
+              <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
+            </Pressable>
+          </View>
+
+        </ScrollView>
+      </SafeAreaView>
     </ImageBackground>
   );
 }
+
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 55, 120, 0.62)' },
+  safeArea: { flex: 1 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+  logoContainer: { alignItems: 'center', marginTop: 32, marginBottom: 24 },
+  logoEmoji: { fontSize: 48 },
+  logoTitle: { fontSize: 34, fontWeight: '800', color: '#fff', marginTop: 8 },
+  logoSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderRadius: 20,
+    paddingHorizontal: 22,
+    paddingTop: 26,
+    paddingBottom: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  cardTitle: { fontSize: 21, fontWeight: '700', color: '#fff', textAlign: 'center', marginBottom: 18 },
+  fieldContainer: { marginBottom: 14 },
+  label: { fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '600', marginBottom: 5 },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#fff',
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    borderRadius: 12,
+  },
+  passwordInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15, color: '#fff' },
+  eyeBtn: { paddingHorizontal: 12 },
+  eyeText: { fontSize: 17 },
+  button: { backgroundColor: '#E31837', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 14 },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  errorText: { color: '#fca5a5', fontSize: 11, marginTop: 3 },
+  linkBtn: { alignItems: 'center' },
+  link: { color: 'rgba(255,255,255,0.88)', fontSize: 13 },
+});

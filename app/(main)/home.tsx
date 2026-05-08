@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { View, Text, Pressable, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  View, Text, Pressable, FlatList,
+  ActivityIndicator, RefreshControl, StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, withSpring, useAnimatedStyle } from 'react-native-reanimated';
@@ -19,9 +22,6 @@ export default function Home() {
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => { scale.value = withSpring(0.9); };
-  const handlePressOut = () => { scale.value = withSpring(1); };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await refetch();
@@ -33,37 +33,27 @@ export default function Home() {
   );
 
   return (
-    // SafeAreaView solo maneja el área del notch (top), con el color del header
-    <SafeAreaView edges={['top']} className="flex-1 bg-dominos-blue">
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
 
       {/* Header */}
-      <View className="bg-dominos-blue px-6 pt-2 pb-4 flex-row items-center justify-between">
-        <Text className="text-white text-2xl font-bold">
-          Mis Platos 🍕
-        </Text>
-        <Pressable
-          onPress={signOut}
-          className="bg-dominos-red rounded-lg px-3 py-1.5"
-        >
-          <Text className="text-white text-sm font-semibold">
-            Cerrar Sesión
-          </Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Mis Platos 🍕</Text>
+        <Pressable style={styles.logoutBtn} onPress={signOut}>
+          <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </Pressable>
       </View>
 
-      {/* Contenido — fondo blanco, posición relativa para el FAB */}
-      <View className="flex-1 bg-dominos-white">
+      {/* Contenido */}
+      <View style={styles.content}>
         {isLoading ? (
-          <View className="flex-1 justify-center items-center">
+          <View style={styles.centered}>
             <ActivityIndicator size="large" color="#E31837" />
           </View>
         ) : !dishes || dishes.length === 0 ? (
-          <View className="flex-1 justify-center items-center px-8">
-            <Text className="text-6xl mb-4">🍽️</Text>
-            <Text className="text-gray-600 text-lg font-semibold text-center">
-              Sin platos registrados
-            </Text>
-            <Text className="text-gray-400 text-sm text-center mt-2">
+          <View style={styles.centered}>
+            <Text style={styles.emptyIcon}>🍽️</Text>
+            <Text style={styles.emptyTitle}>Sin platos registrados</Text>
+            <Text style={styles.emptySubtitle}>
               Presiona el botón + para agregar tu primer plato.
             </Text>
           </View>
@@ -72,7 +62,7 @@ export default function Home() {
             data={dishes}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -84,23 +74,15 @@ export default function Home() {
           />
         )}
 
-        {/* FAB — absolute dentro del View blanco */}
-        <Animated.View
-          style={[
-            animatedStyle,
-            { position: 'absolute', bottom: 32, right: 32 },
-          ]}
-        >
+        {/* FAB */}
+        <Animated.View style={[styles.fab, animatedStyle]}>
           <Pressable
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
+            onPressIn={() => { scale.value = withSpring(0.88); }}
+            onPressOut={() => { scale.value = withSpring(1); }}
             onPress={() => router.push('/(main)/add-dish')}
-            className="bg-dominos-red w-16 h-16 rounded-full items-center justify-center"
-            style={{ elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 4 }}
+            style={styles.fabButton}
           >
-            <Text className="text-white text-3xl font-bold leading-none">
-              +
-            </Text>
+            <Text style={styles.fabText}>+</Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -108,3 +90,45 @@ export default function Home() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#0055A5' },
+  header: {
+    backgroundColor: '#0055A5',
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  logoutBtn: {
+    backgroundColor: '#E31837',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  logoutText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  content: { flex: 1, backgroundColor: '#fff' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  emptyIcon: { fontSize: 56, marginBottom: 12 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#4b5563', textAlign: 'center' },
+  emptySubtitle: { fontSize: 13, color: '#9ca3af', textAlign: 'center', marginTop: 6 },
+  listContent: { padding: 16, paddingBottom: 100 },
+  fab: { position: 'absolute', bottom: 28, right: 24 },
+  fabButton: {
+    backgroundColor: '#E31837',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 5,
+  },
+  fabText: { color: '#fff', fontSize: 30, fontWeight: '700', lineHeight: 34 },
+});
