@@ -15,7 +15,6 @@ export default function AddDish() {
   const form = useForm({
     defaultValues: {
       name: '',
-      description: '',
     },
     onSubmit: async ({ value }) => {
       if (!photoUri) {
@@ -29,11 +28,11 @@ export default function AddDish() {
 
         await addDish({
           name: value.name,
-          description: value.description || null,
-          image_url: photoUri,
-          user_id: '',
+          photo_uri: photoUri,
           latitude: location.latitude,
           longitude: location.longitude,
+          city: location.city,
+          country: location.country,
         });
 
         Alert.alert('Éxito', 'Plato registrado correctamente', [
@@ -99,22 +98,6 @@ export default function AddDish() {
                 {field.state.meta.errors.join(', ')}
               </Text>
             ) : null}
-          </View>
-        )}
-      </form.Field>
-
-      <form.Field name="description">
-        {(field) => (
-          <View className="mb-4">
-            <Text className="text-sm text-dominos-blue mb-1">Descripción</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
-              value={field.state.value}
-              onChangeText={field.handleChange}
-              placeholder="Opcional..."
-              multiline
-              numberOfLines={3}
-            />
           </View>
         )}
       </form.Field>

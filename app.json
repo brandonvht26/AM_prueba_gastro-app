@@ -42,21 +42,20 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Se necesita acceso a la cámara para tomar fotos de los platillos.",
-          "microphonePermission": "Se necesita acceso al micrófono para grabar videos."
+          "cameraPermission": "Gastro Map necesita acceso a tu cámara para registrar la foto del plato."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Se necesita acceso a la galería para seleccionar imágenes de platillos."
+          "photosPermission": "Gastro Map necesita acceso a tu galería para subir fotos de platos."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Se necesita acceso a la ubicación para mostrar restaurantes cercanos.",
-          "locationWhenInUsePermission": "Se necesita acceso a la ubicación para mostrar restaurantes cercanos."
+          "locationAlwaysAndWhenInUsePermission": "Gastro Map necesita tu ubicación para guardar dónde probaste este plato.",
+          "locationWhenInUsePermission": "Gastro Map necesita tu ubicación para guardar dónde probaste este plato."
         }
       ]
     ],

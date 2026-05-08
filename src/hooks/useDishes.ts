@@ -23,11 +23,25 @@ export function useDishes() {
     enabled: !!userId,
   });
 
+  type InsertDish = Omit<Dish, 'id' | 'created_at' | 'user_id'>;
+
   const mutation = useMutation({
-    mutationFn: async (newDish: Omit<Dish, 'id' | 'created_at'>) => {
+    mutationFn: async (newDish: InsertDish) => {
+      if (!userId) {
+        throw new Error('User must be authenticated');
+      }
+
       const { data, error } = await supabase
         .from('dishes')
-        .insert(newDish)
+        .insert({
+          user_id: userId,
+          name: newDish.name,
+          photo_uri: newDish.photo_uri,
+          city: newDish.city,
+          country: newDish.country,
+          latitude: newDish.latitude,
+          longitude: newDish.longitude,
+        })
         .select()
         .single();
 
@@ -39,5 +53,22 @@ export function useDishes() {
     },
   });
 
-  return { dishes: query.data, isLoading: query.isLoading, error: query.error, ...mutation };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('dishes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dishes', userId] });
+    },
+  });
+
+  return {
+    dishes: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    ...mutation,
+    deleteDish: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
+  };
 }
