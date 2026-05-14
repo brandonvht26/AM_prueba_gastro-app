@@ -8,9 +8,11 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useForm } from '@tanstack/react-form';
 import { useDishes } from '@/src/hooks/useDishes';
+import { useAuth } from '@/src/hooks/useAuth';
 import { getCurrentLocation } from '@/src/hooks/useLocation';
 import { takePhoto, pickImage } from '@/src/hooks/useMedia';
 import { WebView } from 'react-native-webview';
+import { uploadDishPhoto } from '@/src/services/storage';
 
 function buildSelectionMapHtml(selectedLat?: number, selectedLng?: number): string {
   return `
@@ -48,11 +50,13 @@ function buildSelectionMapHtml(selectedLat?: number, selectedLng?: number): stri
 
 export default function AddDish() {
   const router = useRouter();
+  const { session } = useAuth();
+  const userId = session?.user?.id;
   const { addDish, isPending } = useDishes();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [locationMode, setLocationMode] = useState<'auto' | 'manual'>('auto');
-  const [manualCoords, setManualCoords] = useState<{latitude: number, longitude: number} | null>(null);
+  const [manualCoords, setManualCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const webViewRef = useRef<WebView>(null);
 
   const scale = useSharedValue(1);
@@ -67,8 +71,17 @@ export default function AddDish() {
         Alert.alert('Error', 'Debes tomar o seleccionar una foto');
         return;
       }
+      if (!userId) {
+        Alert.alert('Error', 'No hay sesión activa');
+        return;
+      }
+
       setCapturing(true);
       try {
+        // 1. Subir foto a Supabase Storage y obtener URL pública permanente
+        const publicUrl = await uploadDishPhoto(photoUri, userId);
+
+        // 2. Obtener ubicación según el modo seleccionado
         let latitude: number;
         let longitude: number;
         let city: string | null = null;
@@ -83,20 +96,23 @@ export default function AddDish() {
         } else {
           if (!manualCoords) {
             Alert.alert('Error', 'Debes seleccionar una ubicación en el mapa');
+            setCapturing(false);
             return;
           }
           latitude = manualCoords.latitude;
           longitude = manualCoords.longitude;
         }
 
+        // 3. Guardar plato con la URL pública (no la ruta local)
         await addDish({
           name: value.name,
-          photo_uri: photoUri,
+          photo_uri: publicUrl,
           latitude,
           longitude,
           city,
           country,
         });
+
         Alert.alert('Éxito', 'Plato registrado correctamente', [
           { text: 'OK', onPress: () => router.replace('/(main)/home') },
         ]);
@@ -343,7 +359,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  locationBtnActive: { backgroundColor: '#0055A5', borderColor: '#fff' },
+  locationBtnActive: { backgroundColor: '#0055A5', borderColor: '#003d7a' },
   locationBtnInactive: { backgroundColor: '#6b7280' },
   locationBtnText: { fontWeight: '700', fontSize: 13 },
   locationBtnTextActive: { color: '#fff' },

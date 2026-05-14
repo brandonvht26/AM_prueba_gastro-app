@@ -18,7 +18,30 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return Math.round(R * c * 100) / 100;
 }
 
-function buildMapHtml(dishLat: number, dishLng: number, userLat?: number, userLng?: number): string {
+// name ahora es parámetro — se interpola directamente sin anidamiento
+function buildMapHtml(
+  dishName: string,
+  dishLat: number,
+  dishLng: number,
+  userLat?: number,
+  userLng?: number
+): string {
+  const userSection =
+    userLat !== undefined && userLng !== undefined
+      ? `
+      const userIcon = L.divIcon({
+        html: '<div style="background:#0055A5;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.4)"></div>',
+        iconSize: [22, 22], iconAnchor: [11, 11], className: ''
+      });
+      L.marker([${userLat}, ${userLng}], {icon: userIcon})
+        .addTo(map)
+        .bindPopup('Tu ubicaci\u00f3n');
+      L.polyline([[${dishLat}, ${dishLng}], [${userLat}, ${userLng}]], {
+        color: '#E31837', weight: 3, dashArray: '6,6'
+      }).addTo(map);
+      `
+      : '';
+
   return `
   <!DOCTYPE html>
   <html>
@@ -42,20 +65,10 @@ function buildMapHtml(dishLat: number, dishLng: number, userLat?: number, userLn
       });
       L.marker([${dishLat}, ${dishLng}], {icon: dishIcon})
         .addTo(map)
-        .bindPopup('<b>${'${name}'}</b>').openPopup();
+        .bindPopup('<b>${dishName}</b>')
+        .openPopup();
 
-      ${userLat !== undefined && userLng !== undefined ? `
-      const userIcon = L.divIcon({
-        html: '<div style="background:#0055A5;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.4)"></div>',
-        iconSize: [22, 22], iconAnchor: [11, 11], className: ''
-      });
-      L.marker([${userLat}, ${userLng}], {icon: userIcon})
-        .addTo(map)
-        .bindPopup('Tu ubicaci\u00f3n');
-      L.polyline([[${dishLat}, ${dishLng}], [${userLat}, ${userLng}]], {
-        color: '#E31837', weight: 3, dashArray: '6,6'
-      }).addTo(map);
-      ` : ''}
+      ${userSection}
     </script>
   </body>
   </html>
@@ -65,6 +78,7 @@ function buildMapHtml(dishLat: number, dishLng: number, userLat?: number, userLn
 export default function DishDetail() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; name: string; latitude: string; longitude: string }>();
+  const dishName = params.name ?? 'Plato';
   const latitude = parseFloat(params.latitude);
   const longitude = parseFloat(params.longitude);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -81,36 +95,52 @@ export default function DishDetail() {
     })();
   }, []);
 
-  const distance = userLocation ? haversineKm(userLocation.latitude, userLocation.longitude, latitude, longitude) : null;
+  const distance =
+    userLocation
+      ? haversineKm(userLocation.latitude, userLocation.longitude, latitude, longitude)
+      : null;
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
+
+      {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backText}>← Volver</Text>
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>{params.name}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{dishName}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
+      {/* Mapa */}
       <View style={styles.content}>
         <WebView
-          source={{ html: buildMapHtml(latitude, longitude, userLocation?.latitude, userLocation?.longitude) }}
+          source={{
+            html: buildMapHtml(
+              dishName,
+              latitude,
+              longitude,
+              userLocation?.latitude,
+              userLocation?.longitude
+            ),
+          }}
           style={{ flex: 1 }}
           originWhitelist={['*']}
           javaScriptEnabled
         />
       </View>
 
+      {/* Panel de distancia */}
       <View style={styles.bottomPanel}>
         {distance !== null ? (
           <Text style={styles.distanceText}>
             📍 Distancia: {distance.toFixed(2)} km desde tu ubicación
           </Text>
         ) : (
-          <Text style={styles.distanceText}>📍 Obteniendo ubicación...</Text>
+          <Text style={styles.distanceLoading}>📍 Obteniendo ubicación...</Text>
         )}
       </View>
+
     </SafeAreaView>
   );
 }
@@ -131,9 +161,9 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 80 },
   content: { flex: 1, backgroundColor: '#fff' },
   bottomPanel: {
-    height: 90,
+    height: 70,
     backgroundColor: '#fff',
-    padding: 16,
+    paddingHorizontal: 16,
     borderTopWidth: 1,
     borderColor: '#e5e7eb',
     justifyContent: 'center',
@@ -142,6 +172,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0055A5',
+    textAlign: 'center',
+  },
+  distanceLoading: {
+    fontSize: 14,
+    color: '#9ca3af',
     textAlign: 'center',
   },
 });
