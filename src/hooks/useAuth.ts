@@ -20,8 +20,14 @@ export function useAuth() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+      } else if (event === 'TOKEN_REFRESHED' && !session) {
+        setSession(null);
+      } else {
+        setSession(session);
+      }
       setIsLoading(false);
     });
 
