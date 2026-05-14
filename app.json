@@ -64,7 +64,7 @@
           "locationAlwaysAndWhenInUsePermission": "Gastro Map necesita tu ubicación para guardar dónde probaste este plato.",
           "locationWhenInUsePermission": "Gastro Map necesita tu ubicación para guardar dónde probaste este plato."
         }
-      ],
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

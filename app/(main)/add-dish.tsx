@@ -169,7 +169,9 @@ export default function AddDish() {
             name="name"
             validators={{
               onChange: ({ value }) => {
-                if (!value) return 'El nombre es requerido';
+                if (!value || !value.trim()) return 'El nombre es requerido';
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/.test(value.trim()))
+                  return 'Solo se permiten letras y espacios';
                 return undefined;
               },
             }}
