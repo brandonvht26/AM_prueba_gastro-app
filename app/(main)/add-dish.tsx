@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, Image,
   Alert, ActivityIndicator, ScrollView, StyleSheet,
@@ -10,12 +10,50 @@ import { useForm } from '@tanstack/react-form';
 import { useDishes } from '@/src/hooks/useDishes';
 import { getCurrentLocation } from '@/src/hooks/useLocation';
 import { takePhoto, pickImage } from '@/src/hooks/useMedia';
+import { WebView } from 'react-native-webview';
+
+function buildSelectionMapHtml(selectedLat?: number, selectedLng?: number): string {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>html,body,#map{margin:0;padding:0;height:100%;width:100%;}</style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      const map = L.map('map').setView([-0.1807, -78.4678], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '\u00a9 OpenStreetMap contributors'
+      }).addTo(map);
+
+      let marker = null;
+      ${selectedLat !== undefined && selectedLng !== undefined ? `
+      marker = L.marker([${selectedLat}, ${selectedLng}]).addTo(map);
+      ` : ''}
+
+      map.on('click', function(e) {
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+        window.ReactNativeWebView.postMessage(JSON.stringify({lat: e.latlng.lat, lng: e.latlng.lng}));
+      });
+    </script>
+  </body>
+  </html>
+  `;
+}
 
 export default function AddDish() {
   const router = useRouter();
   const { addDish, isPending } = useDishes();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [locationMode, setLocationMode] = useState<'auto' | 'manual'>('auto');
+  const [manualCoords, setManualCoords] = useState<{latitude: number, longitude: number} | null>(null);
+  const webViewRef = useRef<WebView>(null);
 
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
@@ -31,14 +69,33 @@ export default function AddDish() {
       }
       setCapturing(true);
       try {
-        const location = await getCurrentLocation();
+        let latitude: number;
+        let longitude: number;
+        let city: string | null = null;
+        let country: string | null = null;
+
+        if (locationMode === 'auto') {
+          const location = await getCurrentLocation();
+          latitude = location.latitude;
+          longitude = location.longitude;
+          city = location.city ?? null;
+          country = location.country ?? null;
+        } else {
+          if (!manualCoords) {
+            Alert.alert('Error', 'Debes seleccionar una ubicación en el mapa');
+            return;
+          }
+          latitude = manualCoords.latitude;
+          longitude = manualCoords.longitude;
+        }
+
         await addDish({
           name: value.name,
           photo_uri: photoUri,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          city: location.city,
-          country: location.country,
+          latitude,
+          longitude,
+          city,
+          country,
         });
         Alert.alert('Éxito', 'Plato registrado correctamente', [
           { text: 'OK', onPress: () => router.replace('/(main)/home') },
@@ -150,6 +207,51 @@ export default function AddDish() {
             </View>
           </View>
 
+          {/* Ubicación */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Ubicación *</Text>
+            <View style={styles.locationButtons}>
+              <Pressable
+                style={[
+                  styles.locationBtn,
+                  locationMode === 'auto' ? styles.locationBtnActive : styles.locationBtnInactive,
+                ]}
+                onPress={() => setLocationMode('auto')}
+              >
+                <Text style={[
+                  styles.locationBtnText,
+                  locationMode === 'auto' ? styles.locationBtnTextActive : styles.locationBtnTextInactive,
+                ]}>📍 Ubicación actual</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.locationBtn,
+                  locationMode === 'manual' ? styles.locationBtnActive : styles.locationBtnInactive,
+                ]}
+                onPress={() => setLocationMode('manual')}
+              >
+                <Text style={[
+                  styles.locationBtnText,
+                  locationMode === 'manual' ? styles.locationBtnTextActive : styles.locationBtnTextInactive,
+                ]}>🗺️ Seleccionar en mapa</Text>
+              </Pressable>
+            </View>
+
+            {locationMode === 'manual' && (
+              <WebView
+                ref={webViewRef}
+                style={styles.map}
+                source={{ html: buildSelectionMapHtml(manualCoords?.latitude, manualCoords?.longitude) }}
+                originWhitelist={['*']}
+                javaScriptEnabled
+                onMessage={(e) => {
+                  const { lat, lng } = JSON.parse(e.nativeEvent.data);
+                  setManualCoords({ latitude: lat, longitude: lng });
+                }}
+              />
+            )}
+          </View>
+
           {/* Botón Registrar con withSpring */}
           <Animated.View style={[styles.submitWrapper, animatedStyle]}>
             <Pressable
@@ -232,4 +334,19 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { backgroundColor: '#9ca3af' },
   submitText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  locationButtons: { flexDirection: 'row', gap: 10 },
+  locationBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  locationBtnActive: { backgroundColor: '#0055A5', borderColor: '#fff' },
+  locationBtnInactive: { backgroundColor: '#6b7280' },
+  locationBtnText: { fontWeight: '700', fontSize: 13 },
+  locationBtnTextActive: { color: '#fff' },
+  locationBtnTextInactive: { color: '#fff' },
+  map: { height: 220, borderRadius: 12, marginTop: 8 },
 });

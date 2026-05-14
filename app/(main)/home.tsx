@@ -29,7 +29,19 @@ export default function Home() {
   };
 
   const renderItem = ({ item }: { item: Dish }) => (
-    <DishCard dish={item} onDelete={deleteDish} />
+    <DishCard
+      dish={item}
+      onDelete={deleteDish}
+      onViewMap={(dish) => router.push({
+        pathname: '/(main)/dish-detail',
+        params: {
+          id: dish.id,
+          name: dish.name,
+          latitude: String(dish.latitude),
+          longitude: String(dish.longitude),
+        },
+      })}
+    />
   );
 
   return (

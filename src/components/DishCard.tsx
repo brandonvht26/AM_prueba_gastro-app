@@ -7,9 +7,10 @@ import type { Dish } from '@/src/types';
 interface Props {
   dish: Dish;
   onDelete: (id: string) => Promise<void>;
+  onViewMap: (dish: Dish) => void;
 }
 
-export default function DishCard({ dish, onDelete }: Props) {
+export default function DishCard({ dish, onDelete, onViewMap }: Props) {
   const [removing, setRemoving] = useState(false);
 
   const handleDelete = () => {
@@ -59,6 +60,13 @@ export default function DishCard({ dish, onDelete }: Props) {
             <Text className="text-lg font-bold text-dominos-blue">{dish.name}</Text>
             {dish.city && (
               <Text className="text-sm text-gray-500 mt-1">{dish.city}</Text>
+            )}
+            {dish.latitude && dish.longitude && (
+              <Pressable onPress={() => onViewMap(dish)}>
+                <Text style={{ color: '#0055A5', fontSize: 13, fontWeight: '600', marginTop: 6 }}>
+                  📍 Ver ubicación
+                </Text>
+              </Pressable>
             )}
           </View>
         </View>
